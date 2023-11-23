@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IVault} from "../interfaces/IVault.sol";
 import {Strategy} from "./Strategy.sol";
 
 /**
@@ -14,7 +15,7 @@ import {Strategy} from "./Strategy.sol";
  * The yield optimizing strategy itself is implemented in a separate 'Strategy.sol' contract.
  */
 
-contract Vault is ERC20, Ownable, ReentrancyGuard {
+contract Vault is IVault, ERC20, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // The strategy currently in use by the vault.
     Strategy public strategy;
