@@ -4,21 +4,18 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-event Deposit(uint256 indexed lendingTokenDeposited);
-
 interface IStrategy {
+    event Deposit(uint256 indexed lendingTokenDeposited);
+    event Withdraw(uint256 indexed lendingTokenBal);
+    event Harvested(address indexed user, uint256 indexed amount);
+
     function getLendingToken() external view returns (IERC20);
-    function beforeDeposit() external;
+
     function deposit() external;
+
     function withdraw(uint256) external;
-    function balanceOf() external view returns (uint256);
-    function balanceOfWant() external view returns (uint256);
-    function balanceOfPool() external view returns (uint256);
+
+    function balanceOfLendingToken() external view returns (uint256);
+
     function harvest() external;
-    function retireStrat() external;
-    function panic() external;
-    function pause() external;
-    function unpause() external;
-    function paused() external view returns (bool);
-    function unirouter() external view returns (address);
 }

@@ -19,27 +19,48 @@ contract Vault is IVault, ERC20, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // The strategy currently in use by the vault.
     Strategy public strategy;
+    address public lendingToken;
+
+    // TODO: Add events
 
     /**
      * @dev Sets the value of {token} to the token that the vault will
      * hold as underlying value. It initializes the vault's own 'moo' token.
      * This token is minted when someone does a deposit. It is burned in order
      * to withdraw the corresponding portion of the underlying assets.
-     * @param _strategy the address of the strategy.
      * @param _name the name of the vault token.
      * @param _symbol the symbol of the vault token.
+     * @param _lendingToken the address of the lending token.
+     * @param _lendingPool the address of the lending pool that the strategy will deposit _lendingTokens to.
+     * @param _dataProvider Provides token addresses & user data
+     * @param _incentivesController Lending pool incentive controller
      */
 
     constructor(
-        Strategy _strategy,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        address _lendingToken,
+        address _native,
+        address _output,
+        address _lendingPool,
+        address _dataProvider,
+        address _incentivesController
     ) ERC20(_name, _symbol) Ownable(msg.sender) {
-        strategy = _strategy;
+        lendingToken = _lendingToken;
+
+        strategy = new Strategy(
+            address(this),
+            _lendingToken,
+            _native,
+            _output,
+            _lendingPool,
+            _dataProvider,
+            _incentivesController
+        );
     }
 
     function getLendingToken() public view returns (IERC20) {
-        return IERC20(strategy.lendingToken());
+        return IERC20(lendingToken);
     }
 
     /**

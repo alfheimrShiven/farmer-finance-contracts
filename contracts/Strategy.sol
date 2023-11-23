@@ -3,13 +3,49 @@
 pragma solidity ^0.8.0;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IStrategy} from "../interfaces/IStrategy.sol";
+import {ILendingPool} from "../interfaces/ILendingPool.sol";
+import {IDataProvider} from "../interfaces/IDataProvider.sol";
+import {IAaveV3Incentives} from "../interfaces/IAaveV3Incentives.sol";
 
-abstract contract Strategy is IStrategy {
+contract Strategy is IStrategy {
+    using SafeERC20 for IERC20;
+    address public vault;
+    // tokens
     address public lendingToken;
+    address public aToken;
+    address public nativeToken;
+    address public outputToken;
 
-    constructor(address _lendingToken) {
+    // third party contracts
+    address public lendingPool;
+    address public dataProvider;
+    address public incentivesController;
+
+    uint256 public lastHarvest;
+
+    constructor(
+        address _vault,
+        address _lendingToken,
+        address _native,
+        address _output,
+        address _lendingPool,
+        address _incentivesController,
+        address _dataProvider
+    ) {
+        vault = _vault;
         lendingToken = _lendingToken;
+        nativeToken = _native;
+        outputToken = _output;
+        (aToken, , ) = IDataProvider(dataProvider).getReserveTokensAddresses(
+            lendingToken
+        );
+        nativeToken = _native;
+        outputToken = _output;
+        lendingPool = _lendingPool;
+        dataProvider = _dataProvider;
+        incentivesController = _incentivesController;
     }
 
     function getLendingToken() public view returns (IERC20) {
@@ -18,10 +54,9 @@ abstract contract Strategy is IStrategy {
 
     // puts the funds to work
     function deposit() public {
-        uint256 lendingTokenBal = getLendingToken.balanceOf(address(this));
+        uint256 lendingTokenBal = balanceOfLendingToken();
 
         if (lendingTokenBal > 0) {
-            // TODO: Import ILendingPool
             ILendingPool(lendingPool).deposit(
                 lendingToken,
                 lendingTokenBal,
@@ -29,7 +64,66 @@ abstract contract Strategy is IStrategy {
                 0
             );
 
-            emit IStrategy.Deposit(lendingTokenBal);
+            emit Deposit(lendingTokenBal);
+        }
+    }
+
+    function withdraw(uint256 _amount) external {
+        require(msg.sender == vault, "!vault");
+
+        uint256 lendingTokenBal = balanceOfLendingToken();
+        if (lendingTokenBal < _amount) {
+            ILendingPool(lendingPool).withdraw(
+                lendingToken,
+                _amount - lendingTokenBal,
+                address(this)
+            );
+
+            lendingTokenBal = balanceOfLendingToken();
+        }
+
+        if (lendingTokenBal > _amount) {
+            lendingTokenBal = _amount;
+        }
+
+        getLendingToken().safeTransfer(vault, lendingTokenBal);
+
+        emit Withdraw(lendingTokenBal);
+    }
+
+    // it calculates how much 'want' this contract holds.
+    function balanceOfLendingToken() public view returns (uint256) {
+        return getLendingToken().balanceOf(address(this));
+    }
+
+    function harvest() external virtual {
+        _harvest(tx.origin);
+    }
+
+    // compounds earnings and charges performance fee
+    function _harvest(address callFeeRecipient) internal {
+        address[] memory assets = new address[](1);
+        assets[0] = aToken;
+
+        IAaveV3Incentives(incentivesController).claimRewards(
+            assets,
+            type(uint).max,
+            address(this),
+            outputToken
+        );
+
+        uint256 outputTokenBal = IERC20(outputToken).balanceOf(address(this));
+
+        if (outputTokenBal > 0) {
+            //TODO chargeFees(callFeeRecipient);
+            //TODO swapRewards();
+
+            uint256 lendingTokenHarvested = balanceOfLendingToken();
+
+            deposit();
+
+            lastHarvest = block.timestamp;
+            emit Harvested(msg.sender, lendingTokenHarvested);
         }
     }
 }
