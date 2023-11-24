@@ -17,5 +17,7 @@ interface IStrategy {
 
     function balanceOfLendingToken() external view returns (uint256);
 
+    function balanceOfPool() external view returns (uint256);
+
     function harvest() external;
 }

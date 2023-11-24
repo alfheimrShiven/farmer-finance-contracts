@@ -91,7 +91,7 @@ contract Strategy is IStrategy {
         emit Withdraw(lendingTokenBal);
     }
 
-    // it calculates how much 'want' this contract holds.
+    // it calculates how much 'lendingToken' this contract holds.
     function balanceOfLendingToken() public view returns (uint256) {
         return getLendingToken().balanceOf(address(this));
     }
@@ -125,5 +125,19 @@ contract Strategy is IStrategy {
             lastHarvest = block.timestamp;
             emit Harvested(msg.sender, lendingTokenHarvested);
         }
+    }
+
+    // it calculates how much 'want' the strategy has working in the farm.
+    function balanceOfPool() public view returns (uint256) {
+        (uint256 supplyBal, uint256 borrowBal) = userReserves();
+        return supplyBal - borrowBal;
+    }
+
+    // return supply and borrow balance
+    function userReserves() public view returns (uint256, uint256) {
+        (uint256 supplyBal, , uint256 borrowBal, , , , , , ) = IDataProvider(
+            dataProvider
+        ).getUserReserveData(lendingToken, address(this));
+        return (supplyBal, borrowBal);
     }
 }
