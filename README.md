@@ -5,6 +5,7 @@
 Farmer Finance consists of:
 
 -   **Vault**: Vault contract will collect the assets the user wants to invest and pass it onto the strategy contract for investing.
+  
 -   **Strategy**: Strategy contracts will enable dynamic funds distribution. Tokens will be deposited as collateral to generate yield from lending protocols.
 
 ## Usage
@@ -20,6 +21,11 @@ $ forge build
 ```shell
 $ forge test
 ```
+
+### Deploy
+```shell
+$ forge script script/DeployVault.s.sol:DeployVault --rpc-url $(Georli_RPC_URL) --private-key $(Georli_PRIVATE_KEY)
+-- broadcast```
 
 ### Format
 
