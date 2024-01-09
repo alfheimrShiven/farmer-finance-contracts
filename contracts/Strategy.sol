@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {IStrategy} from "../interfaces/IStrategy.sol";
 import {ILendingPool} from "../interfaces/ILendingPool.sol";
 import {IDataProvider} from "../interfaces/IDataProvider.sol";
@@ -115,7 +116,7 @@ contract Strategy is IStrategy {
         uint256 outputTokenBal = IERC20(outputToken).balanceOf(address(this));
 
         if (outputTokenBal > 0) {
-            //TODO chargeFees(callFeeRecipient);
+            chargeFees(callFeeRecipient, outputTokenBal);
             //TODO swapRewards();
 
             uint256 lendingTokenHarvested = balanceOfLendingToken();
@@ -139,5 +140,17 @@ contract Strategy is IStrategy {
             dataProvider
         ).getUserReserveData(lendingToken, address(this));
         return (supplyBal, borrowBal);
+    }
+
+    // TODO
+    function beforeDeposit() external {}
+
+    //TODO: performance fees
+    function chargeFees(
+        address callFeeRecipient,
+        uint256 outputTokenBal
+    ) internal {
+        uint256 callFeeAmount = outputTokenBal * (2e18 / 100);
+        IERC20(nativeToken).safeTransfer(callFeeRecipient, callFeeAmount);
     }
 }

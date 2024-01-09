@@ -24,7 +24,7 @@ $ forge test
 
 ### Deploy
 ```shell
-$ forge script script/DeployVault.s.sol:DeployVault --rpc-url $(Georli_RPC_URL) --private-key $(Georli_PRIVATE_KEY)
+$ forge script script/DeployVault.s.sol:DeployVault --rpc-url $(Georli_RPC_URL) --private-key $****(Georli_PRIVATE_KEY)
 -- broadcast```
 
 ### Format
